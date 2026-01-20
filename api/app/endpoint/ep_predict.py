@@ -82,7 +82,7 @@ def predict_energy(payload: BuildingFeatures):
         return {
             "prediction": prediction,
             "unit": "kBtu/sf/year",
-            "unit_label": "Site EUI (intensité d'usage énergétique) normalisée météo"
+            "unit_label": "EUI du site ajustée aux conditions météo"
         }
     except HTTPException:
         # On laisse remonter les HTTPException telles quelles
