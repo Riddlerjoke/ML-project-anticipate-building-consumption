@@ -49,25 +49,54 @@ async def train_model(
     X = df.drop(columns=[target_col])
     y = df[target_col]
 
-    feature_names = X.columns.tolist()
+    # Assurer les types numériques pour les colonnes numériques attendues
+    num_cols = [
+        "DataYear",
+        "NumberofBuildings",
+        "NumberofFloors",
+        "PropertyGFATotal",
+        "PropertyGFAParking",
+        "PropertyGFABuilding(s)",
+        "LargestPropertyUseTypeGFA",
+        "BuildingAge",
+    ]
+    for c in num_cols:
+        if c in X.columns:
+            X[c] = pd.to_numeric(X[c], errors="coerce")
 
-    # 6) Entraîner un RandomForest
+    # Vérifier les 3 colonnes catégorielles utilisées par le predict
+    cat_cols = ["BuildingType", "PrimaryPropertyType", "Neighborhood"]
+    missing = [c for c in (num_cols + cat_cols) if c not in X.columns]
+    if missing:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Colonnes manquantes dans le CSV pour l'entraînement: {missing}"
+        )
+
+    # Encodage One-Hot compatible avec ep_predict.format_input()
+    X_encoded = pd.get_dummies(
+        X,
+        columns=cat_cols,
+        prefix=["BuildingType", "PrimaryPropertyType", "Neighborhood"],
+        prefix_sep="_",
+        dummy_na=False
+    )
+
+    # Optionnel: remplacer NaN numériques par 0 (ou mieux: imputer selon votre stratégie)
+    X_encoded = X_encoded.fillna(0)
+
+    feature_names = X_encoded.columns.tolist()
+
+    # 6) Entraîner un RandomForest sur X encodé
     model = RandomForestRegressor(
         n_estimators=300,
         random_state=42,
         n_jobs=-1
     )
-    model.fit(X, y)
+    model.fit(X_encoded, y)
 
     # 7) Sauvegarde
     os.makedirs("models", exist_ok=True)
     save_path = f"models/{model_name}.joblib"
 
     joblib.dump({"model": model, "features": feature_names}, save_path)
-
-    return {
-        "message": "Modèle entraîné avec succès !",
-        "model_saved_as": save_path,
-        "nb_samples": len(df),
-        "nb_features": len(feature_names)
-    }
