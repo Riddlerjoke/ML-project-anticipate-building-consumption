@@ -13,7 +13,7 @@ app = FastAPI(
     description=(
         "Consultez le notebook : "
         "[Notebook EDA/Modélisation](/static/notebook_preprocessing_modelisation_final.html)\n\n"
-        "Ou via la route conviviale : [/docs/notebook](/docs/notebook)"
+        "Ou via la route : [/docs/notebook](/docs/notebook)"
     ),
 )
 
